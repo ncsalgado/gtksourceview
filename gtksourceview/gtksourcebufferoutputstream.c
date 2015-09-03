@@ -29,6 +29,10 @@
 #include "gtksourcefileloader.h"
 #include "gtksourceview-i18n.h"
 
+#ifdef WITH_UCHARDET
+#include <uchardet.h>
+#endif
+
 /* NOTE: never use async methods on this stream, the stream is just
  * a wrapper around GtkTextBuffer api so that we can use GIO Stream
  * methods, but the underlying code operates on a GtkTextBuffer, so
@@ -352,18 +356,40 @@ try_convert (GCharsetConverter *converter,
 	return ret;
 }
 
+#ifdef WITH_UCHARDET
 static GCharsetConverter *
-guess_encoding (GtkSourceBufferOutputStream *stream,
-	       	const void                  *inbuf,
-	       	gsize                        inbuf_size)
+guess_encoding_with_uchardet (const void *inbuf,
+			      gsize       inbuf_size)
 {
 	GCharsetConverter *conv = NULL;
+	uchardet_t chardet = uchardet_new ();
+	gint success;
 
-	if (inbuf == NULL || inbuf_size == 0)
+	success = uchardet_handle_data (chardet,
+					(const char *) inbuf,
+					(size_t) inbuf_size);
+	uchardet_data_end (chardet);
+
+	if (success == 0 &&
+	    g_strcmp0 (uchardet_get_charset (chardet), "") != 0)
 	{
-		stream->priv->is_utf8 = TRUE;
-		return NULL;
+		conv = g_charset_converter_new ("UTF-8",
+						uchardet_get_charset (chardet),
+						NULL);
 	}
+
+	uchardet_delete (chardet);
+
+	return conv;
+}
+#endif /* WITH_UCHARDET */
+
+static GCharsetConverter *
+guess_encoding_fallback (GtkSourceBufferOutputStream *stream,
+			 const void                  *inbuf,
+			 gsize                        inbuf_size)
+{
+	GCharsetConverter *conv = NULL;
 
 	if (stream->priv->encodings != NULL &&
 	    stream->priv->encodings->next == NULL)
@@ -435,6 +461,31 @@ guess_encoding (GtkSourceBufferOutputStream *stream,
 	if (conv != NULL)
 	{
 		g_converter_reset (G_CONVERTER (conv));
+	}
+
+	return conv;
+}
+
+static GCharsetConverter *
+guess_encoding (GtkSourceBufferOutputStream *stream,
+		const void                  *inbuf,
+		gsize                        inbuf_size)
+{
+	GCharsetConverter *conv = NULL;
+
+	if (inbuf == NULL || inbuf_size == 0)
+	{
+		stream->priv->is_utf8 = TRUE;
+		return NULL;
+	}
+
+#ifdef WITH_UCHARDET
+	conv = guess_encoding_with_uchardet (inbuf, inbuf_size);
+#endif
+
+	if (conv == NULL)
+	{
+		conv = guess_encoding_fallback (stream, inbuf, inbuf_size);
 	}
 
 	return conv;

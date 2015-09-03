@@ -48,6 +48,7 @@ glib_req=2.47.0
 gtk_req=3.19.3
 libxml_req=2.6.0
 gladeui_req=3.9
+uchardet_req=0.0.1
 
 AC_CONFIG_SRCDIR([gtksourceview/gtksourcebuffer.h])
 AC_CONFIG_HEADER([config.h])
@@ -140,6 +141,27 @@ AS_IF([ test "$glade_catalog" = "yes" ],
 	 AC_MSG_RESULT([$GLADE_CATALOG_DIR])
 	 AC_SUBST(GLADE_CATALOG_DIR)])
 
+# Check for uchardet
+AC_ARG_WITH([uchardet],
+	    [AS_HELP_STRING([--without-uchardet],
+			    [Build without uchardet support])],
+	    [with_uchardet=${withval}],
+	    [with_uchardet=yes])
+
+if test "x$with_uchardet" = xyes; then
+	AX_PKG_CHECK_MODULES([UCHARDET],
+			     [],
+			     [uchardet >= $uchardet_req],
+			     [have_uchardet=yes],
+			     [have_uchardet=no])
+
+	if test "x$have_uchardet" = xno; then
+		AC_MSG_ERROR([uchardet library not found or too old. Use --without-uchardet to build without the uchardet dependency.])
+	fi
+
+	AC_DEFINE([WITH_UCHARDET], [1], [Define to 1 if uchardet is available])
+fi
+
 # i18n
 AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION([0.19.4])
@@ -220,4 +242,5 @@ Configuration:
 	Glade Catalog:		${glade_catalog}
 	GObject introspection:	${found_introspection}
 	Vala:			${enable_vala}
+	uchardet:		${with_uchardet}
 "

@@ -16,7 +16,8 @@ LDADD = $(top_builddir)/gtksourceview/completion-providers/words/libgtksourcecom
 	$(top_builddir)/gtksourceview/libgtksourceview-core.la \
 	-lm \
 	$(DEP_LIBS) \
-	$(TESTS_LIBS)
+	$(TESTS_LIBS) \
+	$(UCHARDET_LIBS)
 
 noinst_PROGRAMS = $(TEST_PROGS) $(UNIT_TEST_PROGS)
 

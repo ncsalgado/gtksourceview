@@ -152,8 +152,9 @@ libgtksourceview_core_la_SOURCES =		\
 nodist_libgtksourceview_core_la_SOURCES = \
 	$(BUILT_SOURCES)
 
-libgtksourceview_core_la_CFLAGS = 	\
-	$(CODE_COVERAGE_CFLAGS)
+libgtksourceview_core_la_CFLAGS =	\
+	$(CODE_COVERAGE_CFLAGS)		\
+	$(UCHARDET_CFLAGS)
 
 libgtksourceview_core_la_LDFLAGS =	\
 	-no-undefined 			\
@@ -174,7 +175,9 @@ libgtksourceview_3_0_la_LIBADD = 					\
 	-lm								\
 	libgtksourceview-core.la					\
 	completion-providers/words/libgtksourcecompletionwords.la	\
-	$(DEP_LIBS) $(GTK_MAC_LIBS)
+	$(DEP_LIBS)							\
+	$(UCHARDET_LIBS)						\
+	$(GTK_MAC_LIBS)
 
 libgtksourceview_3_0_la_CFLAGS = 	\
 	$(CODE_COVERAGE_CFLAGS)
