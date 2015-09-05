@@ -390,6 +390,7 @@ guess_encoding_fallback (GtkSourceBufferOutputStream *stream,
 			 gsize                        inbuf_size)
 {
 	GCharsetConverter *conv = NULL;
+	gboolean success = FALSE;
 
 	if (stream->priv->encodings != NULL &&
 	    stream->priv->encodings->next == NULL)
@@ -454,6 +455,7 @@ guess_encoding_fallback (GtkSourceBufferOutputStream *stream,
 		/* Try to convert */
 		if (try_convert (conv, inbuf, inbuf_size))
 		{
+			success = TRUE;
 			break;
 		}
 	}
@@ -461,6 +463,11 @@ guess_encoding_fallback (GtkSourceBufferOutputStream *stream,
 	if (conv != NULL)
 	{
 		g_converter_reset (G_CONVERTER (conv));
+	}
+
+	if (!success)
+	{
+		g_clear_object (&conv);
 	}
 
 	return conv;
