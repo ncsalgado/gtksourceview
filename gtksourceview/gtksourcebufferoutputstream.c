@@ -573,6 +573,26 @@ gtk_source_buffer_output_stream_get_guessed (GtkSourceBufferOutputStream *stream
 		 */
 		return gtk_source_encoding_get_utf8 ();
 	}
+	else if (stream->priv->charset_conv != NULL)
+	{
+		/* When detecting with uchardet, current_encoding is NULL, but
+		 * there is a GCharsetConverter.
+		 */
+		gchar *charset_name = NULL;
+
+		g_object_get (stream->priv->charset_conv,
+		              "from-charset", &charset_name,
+		              NULL);
+
+		if (charset_name != NULL)
+		{
+			const GtkSourceEncoding *enc;
+
+			enc = gtk_source_encoding_get_from_charset (charset_name);
+			g_free (charset_name);
+			return enc;
+		}
+	}
 
 	return NULL;
 }
