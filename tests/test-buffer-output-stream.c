@@ -113,7 +113,7 @@ test_consecutive_tnewline (void)
 static void
 test_big_char (void)
 {
-	test_consecutive_write ("\343\203\200\343\203\200", "\343\203\200\343\203\200", 2,
+	test_consecutive_write ("\343\203\200\343\203\200", "\343\203\200\343\203\200", 3,
 				GTK_SOURCE_NEWLINE_TYPE_LF);
 }
 
