@@ -80,7 +80,6 @@ struct _GtkSourceBufferOutputStreamPrivate
 	guint n_fallback_errors;
 
 	guint is_utf8 : 1;
-	guint use_first : 1;
 
 	guint is_initialized : 1;
 	guint is_closed : 1;
@@ -258,7 +257,6 @@ gtk_source_buffer_output_stream_init (GtkSourceBufferOutputStream *stream)
 	stream->priv->is_initialized = FALSE;
 	stream->priv->is_closed = FALSE;
 	stream->priv->is_utf8 = FALSE;
-	stream->priv->use_first = FALSE;
 }
 
 static const GtkSourceEncoding *
@@ -278,10 +276,9 @@ get_encoding (GtkSourceBufferOutputStream *stream)
 		return stream->priv->current_encoding->data;
 	}
 
-	stream->priv->use_first = TRUE;
-	stream->priv->current_encoding = stream->priv->encodings;
-
-	return stream->priv->current_encoding->data;
+	/* We looped through the whole encoding list. Reset to start. */
+	stream->priv->current_encoding = NULL;
+	return NULL;
 }
 
 static gboolean
@@ -392,12 +389,6 @@ guess_encoding_fallback (GtkSourceBufferOutputStream *stream,
 	GCharsetConverter *conv = NULL;
 	gboolean success = FALSE;
 
-	if (stream->priv->encodings != NULL &&
-	    stream->priv->encodings->next == NULL)
-	{
-		stream->priv->use_first = TRUE;
-	}
-
 	/* We just check the first block */
 	while (TRUE)
 	{
@@ -424,8 +415,7 @@ guess_encoding_fallback (GtkSourceBufferOutputStream *stream,
 			gsize remainder;
 			const gchar *end;
 
-			if (g_utf8_validate (inbuf, inbuf_size, &end) ||
-			    stream->priv->use_first)
+			if (g_utf8_validate (inbuf, inbuf_size, &end))
 			{
 				stream->priv->is_utf8 = TRUE;
 				break;
@@ -445,12 +435,6 @@ guess_encoding_fallback (GtkSourceBufferOutputStream *stream,
 		conv = g_charset_converter_new ("UTF-8",
 						gtk_source_encoding_get_charset (enc),
 						NULL);
-
-		/* If we tried all encodings we use the first one */
-		if (stream->priv->use_first)
-		{
-			break;
-		}
 
 		/* Try to convert */
 		if (try_convert (conv, inbuf, inbuf_size))
