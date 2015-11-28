@@ -323,7 +323,7 @@ try_convert (GCharsetConverter *converter,
 
 	if (err != NULL)
 	{
-		if (err->code == G_CONVERT_ERROR_PARTIAL_INPUT)
+		if (err->code == G_IO_ERROR_PARTIAL_INPUT)
 		{
 			/* FIXME We can get partial input while guessing the
 			   encoding because we just take some amount of text
