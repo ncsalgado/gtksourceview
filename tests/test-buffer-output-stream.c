@@ -20,6 +20,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <gtk/gtk.h>
@@ -313,10 +317,14 @@ test_utf8_utf8 (void)
 	g_assert_cmpstr (aux, ==, "foobar\xc3\xa8\xc3\xa8\xc3\xa8zzzzzz");
 	g_free (aux);
 
-	/* small chunk */
+#ifndef WITH_UCHARDET
+	/* Test small chunk, but doesn't work with uchardet. The first two
+	 * characters ("fo") are seen as ASCII with uchardet.
+	 */
 	aux = do_test ("foobar\xc3\xa8\xc3\xa8\xc3\xa8zzzzzz", "UTF-8", NULL, 18, 2, NULL);
 	g_assert_cmpstr (aux, ==, "foobar\xc3\xa8\xc3\xa8\xc3\xa8zzzzzz");
 	g_free (aux);
+#endif
 }
 
 static void
@@ -390,9 +398,12 @@ test_utf16_utf8 (void)
 	g_assert_cmpstr (aux, ==, "\xe2\xb4\xb2");
 	g_free (aux);
 
+#ifndef WITH_UCHARDET
+	/* Test with small chunks, but doesn't work with uchardet. */
 	aux = do_test (text, "UTF-16", NULL, aux_len, 1, NULL);
 	g_assert_cmpstr (aux, ==, "\xe2\xb4\xb2");
 	g_free (aux);
+#endif
 }
 
 gint
