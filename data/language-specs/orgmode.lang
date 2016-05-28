@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ Nuno Salgado / 2016
+ 
+ GtkSourceView is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2.1 of the License, or (at your option) any later version.
+
+ GtkSourceView is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+
+ You should have received a copy of the GNU Lesser General Public
+ License along with this library; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+-->
+<!-- Note: this language definition file adds support for Org-mode syntax,
+     described in the following websites:
+     * (fr) <http://michelf.com/projets/php-markdown/syntaxe/>
+     * (en) <http://daringfireball.net/projects/markdown/syntax> -->
+
+<language id="orgmode" _name="Org-mode" version="2.0" _section="Markup">
+  <metadata>
+    <property name="mimetypes">text/x-orgmode</property>
+    <property name="globs">*.org</property>
+    <property name="line-comment-start">#</property>
+  </metadata>
+
+  <styles>
+    <style id="header1"           _name="Header1"           map-to="def:type"/>
+    <style id="header2"           _name="Header2"           map-to="def:type"/>
+    <style id="horizontal-rule"   _name="Horizontal Rule"   map-to="def:type"/>
+    <style id="list-marker"       _name="List Marker"       map-to="def:statement"/>
+    <style id="code"              _name="Code"              map-to="def:identifier"/>
+    <style id="blockquote-marker" _name="Blockquote Marker" map-to="def:comment"/>
+    <style id="url"               _name="URL"               map-to="def:underlined"/>
+    <style id="link-text"         _name="Link Text"         map-to="def:comment"/>
+    <style id="label"             _name="Label"             map-to="def:preprocessor"/>
+    <style id="attribute-value"   _name="Attribute Value"   map-to="def:constant"/>
+    <style id="image-marker"      _name="Image Marker"      map-to="def:shebang"/>
+    <style id="emphasis"          _name="Emphasis"          map-to="def:doc-comment-element"/>
+    <style id="strong-emphasis"   _name="Strong Emphasis"   map-to="def:statement"/>
+    <style id="backslash-escape"  _name="Backslash Escape"  map-to="def:special-char"/>
+    <style id="line-break"        _name="Line Break"        map-to="def:note"/>
+    <style id="underlined"        _name="Underlined"        map-to="def:underlined"/>
+    <style id="comment"           _name="Comment"           map-to="def:comment"/>
+  </styles>
+
+  <default-regex-options case-sensitive="false" />
+      
+  <definitions>
+    <!-- Examples:
+         * Header 1
+         ** Header 2
+         *** Header 3
+    -->
+    <context id="header1" style-ref="header1">
+      <match>^\*\s.+</match>
+    </context>
+
+    <context id="header2" style-ref="header2">
+      <match>^\*\*+\s.+</match>
+    </context>
+
+    <!-- Examples:
+         5 - seguidos ou +
+    -->
+    <context id="horizontal-rule" style-ref="horizontal-rule">
+      <match extended="true">
+        ^[ ]{0,3}            # Maximum 3 spaces at the beginning of the line.
+         [-]{5,}             # 5 or more hyphens.
+        [ \t]*$              # Optional trailing spaces or tabs.
+      </match>
+    </context>
+
+    <!-- Note about following list and code block contexts: according to the
+         Markdown syntax, to write several paragraphs in a list item, we have
+         to indent each paragraph. Example:
+
+         - Item A (paragraph 1).
+
+             Item A (paragraph 2).
+
+             Item A (paragraph 3).
+
+         - Item B.
+
+         So there is a conflict in terms of syntax highlighting between an
+         indented paragraph inside a list item (4 spaces or 1 tab) and an
+         indented line of code outside a list (also 4 spaces or 1 tab). In this
+         language file, since a full context analysis can't be done (because
+         line break can't be used in regex), the choice was made ​​to highlight
+         code block only from 2 levels of indentation. -->
+
+    <!-- Example (unordered list):
+         * Item
+         + Item
+         - Item
+
+         Example (ordered list):
+         1. Item
+         2. Item
+         3. Item
+    -->
+    <context id="list" style-ref="list-marker">
+      <match extended="true">
+        ^[ ]{0,3}  # Maximum 3 spaces at the beginning of the line.
+        (
+          \*|\+|-| # Asterisk, plus or hyphen for unordered list.
+          [0-9]+\. # Number followed by period for ordered list.
+        )
+        [ \t]+     # Must be followed by at least 1 space or 1 tab.
+      </match>
+    </context>
+
+    <!-- Examples:
+         [link text](http://www.example.com/)
+         [link text](<http://www.example.com/>)
+         [link text]( /folder/page.html "Title" )
+    -->
+    <context id="inline-link">
+      <match extended="true">
+        \[(.*?)\]          # Link text.
+        \(                 # Literal opening parenthesis.
+          [ \t]*           # Optional spaces or tabs after the opening parenthesis.
+          (&lt;(.*?)&gt; | # URL with brackets.
+          (.*?))           # URL without brackets.
+          ([ \t]+(".*?"))? # Optional title.
+          [ \t]*           # Optional spaces or tabs before the closing parenthesis.
+        \)                 # Literal closing parenthesis.
+      </match>
+
+      <include>
+        <context sub-pattern="1" style-ref="link-text"/>
+        <context sub-pattern="3" class="no-spell-check" style-ref="url"/>
+        <context sub-pattern="4" class="no-spell-check" style-ref="url"/>
+        <context sub-pattern="6" style-ref="attribute-value"/>
+      </include>
+    </context>
+
+    <!-- Examples:
+         [link text]
+         [link text][]
+         [link text][link label]
+         [link text] [link label]
+    -->
+    <!-- Note: some assertions are used to differentiate reference link from
+         link label. -->
+    <context id="reference-link">
+      <match>(?&lt;!^ |^  |^   )\[(.*?)\]([ \t]?\[(.*?)\])?(?!:)</match>
+
+      <include>
+        <context sub-pattern="1" style-ref="link-text"/>
+        <context sub-pattern="3" class="no-spell-check" style-ref="label"/>
+      </include>
+    </context>
+
+    <!-- Examples:
+         Lorem _ipsum dolor_ sit amet.
+         Here's an _emphasized text containing an underscore (\_)_.
+    -->
+    <context id="underscores-emphasis" style-ref="underlined">
+      <match>(?&lt;!_)_[^_ \t].*?(?&lt;!\\|_| |\t)_(?!_)</match>
+    </context>
+
+    <!-- Examples:
+         Lorem /ipsum dolor/ sit amet.
+         Here's an /emphasized text containing a slash (\/)/.
+    -->
+    <context id="slash-emphasis" style-ref="emphasis">
+      <match>(?&lt;!\/)\/[^\/ \t].*?(?&lt;!\\|\/| |\t)\/(?!\/)</match>
+    </context>
+
+    <!-- Examples:
+         Lorem _ipsum dolor_ sit amet.
+         Here's a *strongly emphasized text containing an underscore (\_)*.
+    -->
+      <context id="asterisks-strong-emphasis" style-ref="strong-emphasis">
+      <match>(?&lt;!\*)\*[^\* \t].*?(?&lt;!\\|\*| |\t)\*(?!\*)</match>
+    </context>
+
+    <!-- Examples:
+         Lorem +ipsum dolor+ sit amet.
+         Here's a +strongly emphasized text containing an asterisk (\*)+
+    -->
+    <context id="plus-strong-emphasis" style-ref="strong-emphasis">
+      <match>(?&lt;!\+)\+[^\+ \t].*?(?&lt;!\\|\+| |\t)\+(?!\+)</match>
+    </context>
+
+    <!-- Examples:
+         Lorem =ipsum dolor= sit amet.
+         Here's a =strongly emphasized text containing an underscore (\_)=.
+    -->
+      <context id="equal-emphasis" style-ref="code">
+      <match>(?&lt;!\=)\=[^\= \t].*?(?&lt;!\\|\=| |\t)\=(?!\=)</match>
+    </context>
+
+    <!-- Examples:
+         Lorem ~ipsum dolor~ sit amet.
+         Here's a ~strongly emphasized text containing an underscore (\_)~.
+    -->
+      <context id="tilde-emphasis" style-ref="code">
+      <match>(?&lt;!\~)\~[^\~ \t].*?(?&lt;!\\|\~| |\t)\~(?!\~)</match>
+    </context>
+
+    <!-- Note: a manual line break should be followed by a line containing text,
+         but since line break can't be used in regex, only trailing spaces or tabs
+         are matched. -->
+    <context id="line-break">
+      <match>(?&lt;=[^ \t])([ \t]{2,})$</match>
+
+      <include>
+        <context sub-pattern="1" style-ref="line-break"/>
+      </include>
+    </context>
+
+	<context id="blockquote-marker" style-ref="blockquote-marker">
+	  <start>\#\+BEGIN_QUOTE</start>
+	  <end>\#\+END_QUOTE</end>
+	</context>
+
+	<context id="blockexample-marker" style-ref="blockquote-marker">
+	  <start>\#\+BEGIN_EXAMPLE</start>
+	  <end>\#\+END_EXAMPLE</end>
+	</context>
+
+	<context id="blocksrc-marker" style-ref="blockquote-marker">
+	  <start>\#\+BEGIN_SRC</start>
+	  <end>\#\+END_SRC</end>
+	</context>
+
+	<context id="line-comment" style-ref="comment">
+	  <start>^#</start>
+	  <end>$</end>
+	</context>
+
+    <context id="orgmode-syntax">
+      <include>
+        <context ref="blockquote-marker"/>
+        <context ref="blockexample-marker"/>
+        <context ref="blocksrc-marker"/>
+	<context ref="line-comment"/>
+        <context ref="header1"/>
+        <context ref="header2"/>
+        <context ref="horizontal-rule"/>
+        <context ref="list"/>
+        <context ref="inline-link"/>
+        <context ref="reference-link"/>
+        <context ref="underscores-emphasis"/>
+	<context ref="slash-emphasis"/>
+        <context ref="asterisks-strong-emphasis"/>
+        <context ref="plus-strong-emphasis"/>
+	<context ref="equal-emphasis"/>
+	<context ref="tilde-emphasis"/>
+        <context ref="line-break"/>
+      </include>
+    </context>
+
+    <replace id="html:embedded-lang-hook" ref="orgmode-syntax"/>
+
+    <context id="orgmode">
+      <include>
+        <context ref="orgmode-syntax"/>
+        <!-- Note: even if it's highlighted, Markdown syntax within HTML blocks
+             (e.g., `<div>`) is not processed. -->
+        <context ref="html:html"/>
+      </include>
+    </context>
+  </definitions>
+</language>
